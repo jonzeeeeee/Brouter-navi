@@ -30,8 +30,13 @@ jobs:
       - name: Build Android APK
         working-directory: bike-navigator-flutter
         run: |
+          flutter --version
+          if [ ! -d android ]; then
+            flutter create .
+          fi
           flutter pub get
-          flutter create .
+          yes | flutter doctor --android-licenses
+          flutter doctor -v
           flutter build apk --release
 
       - name: Upload APK artifact
