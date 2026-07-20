@@ -1,0 +1,42 @@
+name: bike_navigator
+description: Minimalistische Schwarz-Weiss Navigations-App fuer Fahrraeder
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.2.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # GPS & Location
+  geolocator: ^11.0.0
+
+  # Maps & Routing
+  flutter_map: ^6.1.0
+  latlong2: ^0.9.0
+
+  # Text-to-Speech
+  flutter_tts: ^3.8.5
+
+  # Screen bleibt an
+  wakelock_plus: ^1.2.5
+
+  # GPX / XML Parsing
+  xml: ^6.5.0
+
+  # State Management
+  provider: ^6.1.2
+
+  # Datei-Auswahl
+  file_picker: ^8.0.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
