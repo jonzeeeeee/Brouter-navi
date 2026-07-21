@@ -2,45 +2,71 @@ name: Build Android APK
 
 on:
   push:
-    branches: [main]
+    branches: [ main, master ]
   workflow_dispatch:
+
+# Alle 'run'-Schritte laufen im Unterordner, in dem das Projekt liegt
+defaults:
+  run:
+    working-directory: bike-navigator-flutter
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash
 
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Java 17
+      - name: Set up Java
         uses: actions/setup-java@v4
         with:
-          distribution: temurin
-          java-version: 17
+          distribution: 'temurin'
+          java-version: '17'
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.24.0'
+          channel: 'stable'
+          cache: true
 
-      - name: Build Android APK
-        working-directory: bike-navigator-flutter
+      - name: Projekt-Geruest erzeugen
         run: |
-          flutter --version
-          if [ ! -d android ]; then
-            flutter create .
-          fi
-          flutter pub get
-          yes | flutter doctor --android-licenses
-          flutter doctor -v
-          flutter build apk --release
+          cp -r lib /tmp/lib_backup
+          cp pubspec.yaml /tmp/pubspec_backup.yaml
+          flutter create --org com.example --project-name bike_navigator --platforms=android .
+          rm -rf lib && cp -r /tmp/lib_backup lib
+          cp /tmp/pubspec_backup.yaml pubspec.yaml
 
-      - name: Upload APK artifact
+      - name: Berechtigungen ins Manifest einfuegen
+        run: |
+          python3 - <<'PY'
+          import re, pathlib
+          p = pathlib.Path("android/app/src/main/AndroidManifest.xml")
+          xml = p.read_text()
+          perms = """    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+              <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+              <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+              <uses-permission android:name="android.permission.INTERNET" />
+              <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+              <uses-permission android:name="android.permission.WAKE_LOCK" />
+          """
+          xml = re.sub(r"(<manifest[^>]*>)", r"\1\n" + perms, xml, count=1)
+          p.write_text(xml)
+          print(xml)
+          PY
+
+      - name: Dependencies
+        run: flutter pub get
+
+      - name: Build APK
+        run: flutter build apk --release
+
+      # Hinweis: 'uses'-Schritte ignorieren working-directory -> voller Pfad noetig
+      - name: APK hochladen
         uses: actions/upload-artifact@v4
         with:
           name: bike-navigator-apk
           path: bike-navigator-flutter/build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error
